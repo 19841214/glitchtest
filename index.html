@@ -2,23 +2,24 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>1938 訊號修復行動</title>
+    <title>1938 訊號修復行動 - 彰師附工</title>
     <style>
-        body { background: #050505; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        #container { position: relative; width: 600px; height: 400px; border: 2px solid #333; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); }
-        canvas { width: 100%; height: 100%; display: block; }
-        .controls { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; background: #111; padding: 20px; border-radius: 8px; }
+        body { background: #000; color: #0f0; font-family: 'Noto Sans TC', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        #message { margin-bottom: 20px; font-size: 1.2rem; letter-spacing: 2px; text-shadow: 0 0 5px #0f0; }
+        #container { position: relative; width: 600px; height: 400px; border: 3px solid #333; overflow: hidden; background: #050505; }
+        canvas { width: 100%; height: 100%; }
+        .controls { margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; border: 1px solid #222; }
         .slider-group { display: flex; flex-direction: column; align-items: center; }
-        label { font-size: 12px; margin-bottom: 5px; }
-        input[type=range] { width: 100px; cursor: pointer; }
-        #message { margin-top: 15px; font-weight: bold; min-height: 20px; }
-        .success { color: #fff; text-shadow: 0 0 10px #0f0; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
+        label { font-size: 18px; margin-bottom: 10px; color: #aaa; font-weight: bold; }
+        input[type=range] { -webkit-appearance: none; width: 120px; height: 5px; background: #333; border-radius: 5px; outline: none; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 25px; background: #0f0; border-radius: 2px; }
+        .success-text { color: #fff; text-shadow: 0 0 20px #0f0; animation: glow 1.5s infinite alternate; }
+        @keyframes glow { from { opacity: 0.8; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="message">警告：校史訊號遺失...請同步頻率</div>
+    <div id="message">系統提示：校史核心訊號干擾中...</div>
     
     <div id="container">
         <canvas id="glitchCanvas"></canvas>
@@ -26,19 +27,19 @@
 
     <div class="controls">
         <div class="slider-group">
-            <label>頻率 (F)</label>
-            <input type="range" id="s1" min="0" max="9" value="5">
+            <label>誠</label>
+            <input type="range" id="s1" min="0" max="9" value="0">
+        </div>
+        <div class="slider-group)
+            <label>正</label>
+            <input type="range" id="s2" min="0" max="9" value="0">
         </div>
         <div class="slider-group">
-            <label>相位 (P)</label>
-            <input type="range" id="s2" min="0" max="9" value="2">
+            <label>專</label>
+            <input type="range" id="s3" min="0" max="9" value="0">
         </div>
         <div class="slider-group">
-            <label>增益 (G)</label>
-            <input type="range" id="s3" min="0" max="9" value="7">
-        </div>
-        <div class="slider-group">
-            <label>解碼 (D)</label>
+            <label>精</label>
             <input type="range" id="s4" min="0" max="9" value="0">
         </div>
     </div>
@@ -49,6 +50,10 @@
         const sliders = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
         const msg = document.getElementById('message');
         const target = [1, 9, 3, 8];
+        
+        const logo = new Image();
+        logo.crossOrigin = "anonymous";
+        logo.src = 'https://i.postimg.cc/cHZ70FWn/Logo-SIVC.jpg';
 
         canvas.width = 600;
         canvas.height = 400;
@@ -58,57 +63,68 @@
             const diff = vals.reduce((acc, v, i) => acc + Math.abs(v - target[i]), 0);
             const isSuccess = diff === 0;
 
-            // 清除背景
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (isSuccess) {
-                // 成功畫面：顯示文字或圖片
-                ctx.fillStyle = '#0f0';
-                ctx.font = 'bold 40px Courier New';
-                ctx.textAlign = 'center';
-                ctx.fillText("SIGNAL RESTORED", canvas.width/2, 180);
-                ctx.font = '20px Courier New';
-                ctx.fillText("創校年份：1938", canvas.width/2, 230);
-                msg.innerText = "訊號修復成功！彰師附工精神永傳。";
-                msg.className = "success";
-            } else {
-                // 雜訊畫面：diff 越小，雜訊越弱
-                const noiseDensity = Math.min(diff * 0.1, 1.0);
+                // 成功畫面：清晰校徽
+                ctx.globalAlpha = 1.0;
+                ctx.drawImage(logo, (600-280)/2, 50, 280, 280);
                 
-                // 繪製隨機白噪點
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 32px Microsoft JhengHei';
+                ctx.textAlign = 'center';
+                ctx.fillText("創校年份：1938", canvas.width/2, 370);
+                msg.innerText = "訊號完全同步！誠正專精，附工精神。";
+                msg.style.color = "#fff";
+                msg.classList.add("success-text");
+            } else {
+                // 雜訊模式：計算同步率 (0.0 ~ 1.0)
+                const syncRate = 1 - (diff / 36); 
+                
+                // 隱約顯示校徽 (同步率越高越清楚)
+                ctx.globalAlpha = Math.pow(syncRate, 4); // 指數增長讓最後階段才變清楚
+                ctx.drawImage(logo, (600-280)/2, 50, 280, 280);
+                ctx.globalAlpha = 1.0;
+
+                // 雜訊層 (diff 越大，雜訊越強)
+                const noiseIntensity = diff * 5;
                 const imageData = ctx.createImageData(canvas.width, canvas.height);
                 for (let i = 0; i < imageData.data.length; i += 4) {
-                    const noise = Math.random() * 255 * noiseDensity;
-                    imageData.data[i] = noise;     // R
-                    imageData.data[i+1] = noise;   // G
-                    imageData.data[i+2] = noise;   // B
-                    imageData.data[i+3] = 255;     // A
+                    if (Math.random() > syncRate * 0.8) {
+                        const n = Math.random() * 255;
+                        imageData.data[i] = n;
+                        imageData.data[i+1] = n;
+                        imageData.data[i+2] = n;
+                        imageData.data[i+3] = 150 * (1 - syncRate); // 雜訊透明度隨同步率下降
+                    }
                 }
                 ctx.putImageData(imageData, 0, 0);
 
-                // 繪製掃描線效果
-                ctx.strokeStyle = `rgba(0, 255, 0, ${0.1 + Math.random() * 0.1})`;
-                for (let i = 0; i < canvas.height; i += 4) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, i + Math.sin(Date.now()*0.01)*2);
-                    ctx.lineTo(canvas.width, i);
-                    ctx.stroke();
+                // 隨機橫向掃描線抖動 (Glitch)
+                if (Math.random() > 0.3) {
+                    ctx.strokeStyle = `rgba(0, 255, 0, ${0.2 * (1-syncRate)})`;
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < 10; i++) {
+                        let y = Math.random() * canvas.height;
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(canvas.width, y + (Math.random()-0.5) * 10);
+                        ctx.stroke();
+                    }
                 }
 
-                // 隨機文字干擾
-                if (Math.random() > 0.9) {
-                    ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
-                    ctx.fillText("RECOVERING...", Math.random()*canvas.width, Math.random()*canvas.height);
-                }
-                msg.innerText = "警告：校史訊號遺失...偏差值: " + diff;
-                msg.className = "";
+                msg.innerText = `搜尋訊號中... 同步率: ${Math.floor(syncRate * 100)}%`;
+                msg.style.color = "#0f0";
+                msg.classList.remove("success-text");
             }
 
             requestAnimationFrame(draw);
         }
 
-        draw();
+        logo.onload = () => {
+            draw();
+        };
     </script>
 </body>
 </html>

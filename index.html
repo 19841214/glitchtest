@@ -3,148 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1938 訊號修復行動 - 彰師附工</title>
+    <title>SIVC 1938 Signal Recovery</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; }
-        #message { margin-bottom: 20px; font-size: 1.2rem; letter-spacing: 2px; text-shadow: 0 0 5px #0f0; height: 30px; }
-        #container { position: relative; width: 600px; height: 400px; border: 3px solid #333; overflow: hidden; background: #050505; box-shadow: 0 0 30px rgba(0, 255, 0, 0.1); }
-        canvas { width: 100%; height: 100%; display: block; }
-        .controls { margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; border: 1px solid #222; }
-        .slider-group { display: flex; flex-direction: column; align-items: center; }
-        label { font-size: 20px; margin-bottom: 10px; color: #aaa; font-weight: bold; }
-        input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: #444; border-radius: 5px; outline: none; cursor: pointer; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #0f0; border-radius: 50%; box-shadow: 0 0 10px #0f0; }
-        .success-text { color: #fff !important; text-shadow: 0 0 20px #0f0; animation: glow 1s infinite alternate; }
-        @keyframes glow { from { opacity: 0.7; } to { opacity: 1; } }
+        :root { --neon: #00ff41; --neon-dim: rgba(0, 255, 65, 0.2); }
+        body { background: #0a0a0a; color: var(--neon); font-family: 'Share Tech Mono', 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-transform: uppercase; }
+        
+        #header { margin-bottom: 10px; text-align: center; }
+        h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-shadow: 0 0 10px var(--neon); }
+        
+        /* 精緻外框設計 */
+        #monitor-shell {
+            position: relative; padding: 20px; border: 2px solid #222; background: #000;
+            box-shadow: inset 0 0 50px rgba(0, 255, 65, 0.1), 0 0 20px rgba(0,0,0,1);
+            border-radius: 10px;
+        }
+        #monitor-shell::before {
+            content: "SIVC_DECRYPTOR_V1.9.3.8"; position: absolute; top: -12px; left: 20px; 
+            background: #0a0a0a; padding: 0 10px; font-size: 10px; color: #444;
+        }
+
+        #container { position: relative; width: 600px; height: 350px; background: #050505; overflow: hidden; border: 1px solid #333; }
+        canvas { width: 100%; height: 100%; }
+
+        /* 滑桿介面美化 */
+        .controls { 
+            margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; 
+            background: rgba(20, 20, 20, 0.8); padding: 30px; border-radius: 5px; border-top: 1px solid #333;
+        }
+        .slider-group { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .slider-group label { font-size: 22px; margin-bottom: 15px; color: var(--neon); text-shadow: 0 0 5px var(--neon); }
+        
+        /* 自定義滑桿 */
+        input[type=range] { -webkit-appearance: none; width: 120px; height: 2px; background: #333; outline: none; margin: 15px 0; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 24px; background: var(--neon); 
+            border: 1px solid #000; cursor: pointer; box-shadow: 0 0 10px var(--neon);
+        }
+
+        /* 刻度標示 */
+        .ticks { display: flex; justify-content: space-between; width: 120px; font-size: 8px; color: #555; pointer-events: none; }
+        
+        .status-bar { width: 640px; display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: #444; }
+        .success-overlay { color: #fff; text-shadow: 0 0 20px var(--neon); animation: blink 0.5s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="message">系統提示：校史核心訊號干擾中...</div>
+    <div id="header">
+        <h1 id="main-title">Encrypted Signal detected</h1>
+        <div id="subtitle" style="font-size: 10px; opacity: 0.6;">Locating School History Data...</div>
+    </div>
     
-    <div id="container">
-        <canvas id="glitchCanvas"></canvas>
+    <div id="monitor-shell">
+        <div id="container">
+            <canvas id="glitchCanvas"></canvas>
+        </div>
     </div>
 
     <div class="controls">
         <div class="slider-group">
             <label>誠</label>
-            <input type="range" id="s1" min="0" max="9" value="0">
+            <input type="range" id="s1" min="0" max="9" value="0" step="1">
+            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
         </div>
         <div class="slider-group">
             <label>正</label>
-            <input type="range" id="s2" min="0" max="9" value="0">
+            <input type="range" id="s2" min="0" max="9" value="0" step="1">
+            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
         </div>
         <div class="slider-group">
             <label>專</label>
-            <input type="range" id="s3" min="0" max="9" value="0">
+            <input type="range" id="s3" min="0" max="9" value="0" step="1">
+            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
         </div>
         <div class="slider-group">
             <label>精</label>
-            <input type="range" id="s4" min="0" max="9" value="0">
+            <input type="range" id="s4" min="0" max="9" value="0" step="1">
+            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
         </div>
+    </div>
+
+    <div class="status-bar">
+        <span>Channel: Alpha-1938</span>
+        <span id="sync-text">Sync: 0%</span>
+        <span>Secure Connection: False</span>
     </div>
 
     <script>
         const canvas = document.getElementById('glitchCanvas');
         const ctx = canvas.getContext('2d');
-        const sliders = [
-            document.getElementById('s1'), 
-            document.getElementById('s2'), 
-            document.getElementById('s3'), 
-            document.getElementById('s4')
-        ];
-        const msg = document.getElementById('message');
-        const target = [1, 9, 3, 8]; // 創校年份：1938
+        const sliders = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+        const syncText = document.getElementById('sync-text');
+        const mainTitle = document.getElementById('main-title');
+        const target = [1, 9, 3, 8];
         
         const logo = new Image();
         logo.crossOrigin = "anonymous";
         logo.src = 'https://i.postimg.cc/cHZ70FWn/Logo-SIVC.jpg';
 
         canvas.width = 600;
-        canvas.height = 400;
+        canvas.height = 350;
 
         function draw() {
             const vals = sliders.map(s => parseInt(s.value));
-            // 計算偏差值
             const diff = vals.reduce((acc, v, i) => acc + Math.abs(v - target[i]), 0);
-            const isSuccess = (diff === 0);
+            const syncRate = Math.max(0, 1 - (diff / 25)); // 調整感應靈敏度
+            const isSuccess = diff === 0;
 
-            // 背景填黑
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = '#020202';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (isSuccess) {
-                // 成功狀態：清晰顯示
+                // 成功狀態
                 ctx.globalAlpha = 1.0;
-                ctx.drawImage(logo, (canvas.width - 250) / 2, 40, 250, 250);
+                ctx.drawImage(logo, (600-220)/2, 40, 220, 220);
                 
                 ctx.fillStyle = '#fff';
-                ctx.font = 'bold 30px Microsoft JhengHei';
+                ctx.font = '24px Share Tech Mono';
                 ctx.textAlign = 'center';
-                ctx.fillText("創校年份：1938", canvas.width / 2, 350);
+                ctx.fillText("ESTABLISHED 1938", canvas.width/2, 310);
                 
-                msg.innerText = "訊號完全同步！誠正專精，附工精神。";
-                msg.className = "success-text";
+                mainTitle.innerText = "ACCESS GRANTED";
+                mainTitle.className = "success-overlay";
+                syncText.innerText = "SYNC: 100%";
+                syncText.style.color = "#fff";
             } else {
-                // 訊號修復中狀態
-                const totalPossibleDiff = 36; // 最大誤差 (9*4)
-                const syncRate = 1 - (diff / totalPossibleDiff); 
-                
-                // 1. 繪製校徽 (透明度隨同步率增加)
+                // 訊號干擾狀態
                 ctx.save();
-                ctx.globalAlpha = Math.pow(syncRate, 5); // 讓影像在接近正確答案時才清晰
-                ctx.drawImage(logo, (canvas.width - 250) / 2, 40, 250, 250);
+                ctx.globalAlpha = Math.pow(syncRate, 6);
+                ctx.filter = `contrast(${100 + syncRate*100}%) brightness(${50 + syncRate*50}%)`;
+                ctx.drawImage(logo, (600-220)/2, 40, 220, 220);
                 ctx.restore();
 
-                // 2. 隨機靜電雜訊 (Static Noise)
+                // 雜訊層
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
-                const noiseStrength = (1 - syncRate) * 255;
-
                 for (let i = 0; i < data.length; i += 4) {
-                    if (Math.random() > syncRate) {
-                        const r = Math.random() * noiseStrength;
-                        data[i] = data[i+1] = data[i+2] = r; 
-                        // data[i+3] 保持原透明度
+                    if (Math.random() > syncRate * 0.95) {
+                        const n = Math.random() * 255 * (1 - syncRate);
+                        data[i] = n; data[i+1] = n; data[i+2] = n;
                     }
                 }
                 ctx.putImageData(imageData, 0, 0);
 
-                // 3. CRT 掃描線效果 (Scanlines)
-                ctx.fillStyle = "rgba(0, 255, 0, 0.05)";
-                for (let i = 0; i < canvas.height; i += 3) {
-                    ctx.fillRect(0, i, canvas.width, 1);
+                // 掃描線
+                ctx.fillStyle = "rgba(0, 255, 65, 0.03)";
+                for(let i=0; i<canvas.height; i+=2) ctx.fillRect(0, i, canvas.width, 1);
+
+                // 隨機位移故障
+                if (Math.random() > 0.9) {
+                    const y = Math.random() * canvas.height;
+                    const h = Math.random() * 30;
+                    const x = (Math.random() - 0.5) * 50 * (1 - syncRate);
+                    ctx.drawImage(canvas, 0, y, canvas.width, h, x, y, canvas.width, h);
                 }
 
-                // 4. 隨機 Glitch 橫移效果
-                if (Math.random() > 0.8) {
-                    const sliceY = Math.random() * canvas.height;
-                    const sliceH = Math.random() * 20;
-                    const offset = (Math.random() - 0.5) * 40 * (1 - syncRate);
-                    ctx.drawImage(canvas, 0, sliceY, canvas.width, sliceH, offset, sliceY, canvas.width, sliceH);
-                }
-
-                msg.innerText = `搜尋訊號中... 同步率: ${Math.floor(syncRate * 100)}%`;
-                msg.className = "";
+                syncText.innerText = `SYNC: ${Math.floor(syncRate * 100)}%`;
+                mainTitle.innerText = "Encrypted Signal detected";
+                mainTitle.className = "";
             }
 
             requestAnimationFrame(draw);
         }
 
-        logo.onload = () => {
-            console.log("Logo loaded");
-            draw();
-        };
-
-        // 監聽滑桿變動，即時更新訊息色彩
-        sliders.forEach(s => s.addEventListener('input', () => {
-            if(msg.className !== "success-text") {
-                msg.style.color = `rgb(${255 * (1-parseInt(s.value)/9)}, 255, ${255 * (parseInt(s.value)/9)})`;
-                // 這裡的小彩蛋：顏色會隨滑桿微變
-                msg.style.color = "#0f0";
-            }
-        }));
+        logo.onload = () => draw();
     </script>
 </body>
 </html>

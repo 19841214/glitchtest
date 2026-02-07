@@ -2,57 +2,72 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIVC 1938 Signal Recovery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SIVC Decoder Mobile</title>
     <style>
-        :root { --neon: #00ff41; --neon-dim: rgba(0, 255, 65, 0.2); }
-        body { background: #0a0a0a; color: var(--neon); font-family: 'Share Tech Mono', 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-transform: uppercase; }
-        
-        #header { margin-bottom: 10px; text-align: center; }
-        h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-shadow: 0 0 10px var(--neon); }
-        
-        /* 精緻外框設計 */
+        :root { --neon: #00ff41; --bg: #050505; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: var(--bg); color: var(--neon); 
+            font-family: 'Share Tech Mono', monospace; 
+            margin: 0; padding: 10px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; touch-action: manipulation;
+        }
+
+        /* 啟動覆蓋層 */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s; cursor: pointer;
+        }
+        #overlay .box { border: 1px solid var(--neon); padding: 30px; text-align: center; }
+
+        #header { width: 100%; text-align: center; padding: 15px 0; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 2px; text-shadow: 0 0 8px var(--neon); }
+
         #monitor-shell {
-            position: relative; padding: 20px; border: 2px solid #222; background: #000;
-            box-shadow: inset 0 0 50px rgba(0, 255, 65, 0.1), 0 0 20px rgba(0,0,0,1);
-            border-radius: 10px;
-        }
-        #monitor-shell::before {
-            content: "SIVC_DECRYPTOR_V1.9.3.8"; position: absolute; top: -12px; left: 20px; 
-            background: #0a0a0a; padding: 0 10px; font-size: 10px; color: #444;
+            width: 100%; max-width: 400px;
+            border: 2px solid #222; background: #000;
+            border-radius: 8px; position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
         }
 
-        #container { position: relative; width: 600px; height: 350px; background: #050505; overflow: hidden; border: 1px solid #333; }
-        canvas { width: 100%; height: 100%; }
+        #container { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
 
-        /* 滑桿介面美化 */
         .controls { 
-            margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; 
-            background: rgba(20, 20, 20, 0.8); padding: 30px; border-radius: 5px; border-top: 1px solid #333;
+            width: 100%; max-width: 400px;
+            margin-top: 15px; display: flex; flex-direction: column; gap: 15px;
+            background: rgba(20, 20, 20, 0.9); padding: 20px; border-radius: 8px;
         }
-        .slider-group { display: flex; flex-direction: column; align-items: center; position: relative; }
-        .slider-group label { font-size: 22px; margin-bottom: 15px; color: var(--neon); text-shadow: 0 0 5px var(--neon); }
+        .slider-group { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 15px; }
+        .slider-group label { font-size: 20px; font-weight: bold; text-align: center; }
         
-        /* 自定義滑桿 */
-        input[type=range] { -webkit-appearance: none; width: 120px; height: 2px; background: #333; outline: none; margin: 15px 0; }
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 12px; background: #1a1a1a; border-radius: 10px; outline: none; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 12px; height: 24px; background: var(--neon); 
-            border: 1px solid #000; cursor: pointer; box-shadow: 0 0 10px var(--neon);
+            -webkit-appearance: none; width: 35px; height: 35px; 
+            background: var(--neon); border-radius: 5px; cursor: pointer;
+            box-shadow: 0 0 10px var(--neon);
         }
 
-        /* 刻度標示 */
-        .ticks { display: flex; justify-content: space-between; width: 120px; font-size: 8px; color: #555; pointer-events: none; }
-        
-        .status-bar { width: 640px; display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: #444; }
-        .success-overlay { color: #fff; text-shadow: 0 0 20px var(--neon); animation: blink 0.5s step-end infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        .status-footer { width: 100%; max-width: 400px; margin-top: auto; padding: 15px 0; display: flex; justify-content: space-between; font-size: 10px; opacity: 0.6; }
+        .success-glow { color: #fff; text-shadow: 0 0 15px var(--neon); animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
+    <div id="overlay" onclick="startSystem()">
+        <div class="box">
+            <p>ENCRYPTED SIGNAL DETECTED</p>
+            <p style="font-size: 12px; margin-top: 10px;">[ TAP TO INITIALIZE DECODER ]</p>
+        </div>
+    </div>
+
     <div id="header">
-        <h1 id="main-title">Encrypted Signal detected</h1>
-        <div id="subtitle" style="font-size: 10px; opacity: 0.6;">Locating School History Data...</div>
+        <h1 id="title">ANALOG SIGNAL DECRYPTION</h1>
     </div>
     
     <div id="monitor-shell">
@@ -63,107 +78,116 @@
 
     <div class="controls">
         <div class="slider-group">
-            <label>誠</label>
-            <input type="range" id="s1" min="0" max="9" value="0" step="1">
-            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+            <label>誠</label><input type="range" id="s1" min="0" max="9" value="0">
         </div>
         <div class="slider-group">
-            <label>正</label>
-            <input type="range" id="s2" min="0" max="9" value="0" step="1">
-            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+            <label>正</label><input type="range" id="s2" min="0" max="9" value="0">
         </div>
         <div class="slider-group">
-            <label>專</label>
-            <input type="range" id="s3" min="0" max="9" value="0" step="1">
-            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+            <label>專</label><input type="range" id="s3" min="0" max="9" value="0">
         </div>
         <div class="slider-group">
-            <label>精</label>
-            <input type="range" id="s4" min="0" max="9" value="0" step="1">
-            <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+            <label>精</label><input type="range" id="s4" min="0" max="9" value="0">
         </div>
     </div>
 
-    <div class="status-bar">
-        <span>Channel: Alpha-1938</span>
-        <span id="sync-text">Sync: 0%</span>
-        <span>Secure Connection: False</span>
+    <div class="status-footer">
+        <span id="sync-val">SYNC: 0%</span>
+        <span>ID: SIVC-CORE-1938</span>
     </div>
 
     <script>
         const canvas = document.getElementById('glitchCanvas');
         const ctx = canvas.getContext('2d');
         const sliders = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
-        const syncText = document.getElementById('sync-text');
-        const mainTitle = document.getElementById('main-title');
+        const title = document.getElementById('title');
+        const syncVal = document.getElementById('sync-val');
         const target = [1, 9, 3, 8];
-        
+        let isStarted = false;
+        let successTriggered = false;
+
+        // 音效設定
+        const audioBGM = new Audio('https://cdn.pixabay.com/download/audio/2026/01/08/audio_626068a6d9.mp3?filename=freemusicforvideo-dark-ambient-soundscape-dreamscape-462864.mp3');
+        audioBGM.loop = true;
+        const audioStatic = new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_542fc2b610.mp3?filename=freesound_community-radio-103737.mp3');
+        const audioSuccess = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_eef1737848.mp3?filename=freesound_community-castle-walls-startup-complete-37995.mp3');
+
         const logo = new Image();
         logo.crossOrigin = "anonymous";
         logo.src = 'https://i.postimg.cc/cHZ70FWn/Logo-SIVC.jpg';
 
-        canvas.width = 600;
-        canvas.height = 350;
+        canvas.width = 400;
+        canvas.height = 300;
+
+        function startSystem() {
+            document.getElementById('overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('overlay').style.display = 'none', 500);
+            audioBGM.volume = 0.5;
+            audioBGM.play();
+            isStarted = true;
+        }
+
+        // 滑桿音效處理
+        sliders.forEach(s => {
+            s.addEventListener('input', () => {
+                if(isStarted && !successTriggered) {
+                    audioStatic.currentTime = Math.random() * 5; // 隨機跳轉雜訊點
+                    audioStatic.volume = 0.3;
+                    audioStatic.play();
+                }
+            });
+        });
 
         function draw() {
             const vals = sliders.map(s => parseInt(s.value));
             const diff = vals.reduce((acc, v, i) => acc + Math.abs(v - target[i]), 0);
-            const syncRate = Math.max(0, 1 - (diff / 25)); // 調整感應靈敏度
-            const isSuccess = diff === 0;
+            const sync = Math.max(0, 1 - (diff / 25));
+            const isSuccess = (diff === 0);
 
-            ctx.fillStyle = '#020202';
+            ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (isSuccess) {
-                // 成功狀態
+                if(!successTriggered) {
+                    audioBGM.pause();
+                    audioSuccess.play();
+                    successTriggered = true;
+                }
                 ctx.globalAlpha = 1.0;
-                ctx.drawImage(logo, (600-220)/2, 40, 220, 220);
-                
+                ctx.drawImage(logo, (400-180)/2, 30, 180, 180);
                 ctx.fillStyle = '#fff';
-                ctx.font = '24px Share Tech Mono';
+                ctx.font = '18px Share Tech Mono';
                 ctx.textAlign = 'center';
-                ctx.fillText("ESTABLISHED 1938", canvas.width/2, 310);
+                ctx.fillText("SINCE 1938", 200, 260);
                 
-                mainTitle.innerText = "ACCESS GRANTED";
-                mainTitle.className = "success-overlay";
-                syncText.innerText = "SYNC: 100%";
-                syncText.style.color = "#fff";
+                title.innerText = "SIVC CORE RESTORED";
+                title.className = "success-glow";
+                syncVal.innerText = "SYNC: 100%";
             } else {
-                // 訊號干擾狀態
                 ctx.save();
-                ctx.globalAlpha = Math.pow(syncRate, 6);
-                ctx.filter = `contrast(${100 + syncRate*100}%) brightness(${50 + syncRate*50}%)`;
-                ctx.drawImage(logo, (600-220)/2, 40, 220, 220);
+                ctx.globalAlpha = Math.pow(sync, 6);
+                ctx.drawImage(logo, (400-180)/2, 30, 180, 180);
                 ctx.restore();
 
-                // 雜訊層
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) {
-                    if (Math.random() > syncRate * 0.95) {
-                        const n = Math.random() * 255 * (1 - syncRate);
-                        data[i] = n; data[i+1] = n; data[i+2] = n;
+                    if (Math.random() > sync * 0.96) {
+                        const n = Math.random() * 255 * (1 - sync);
+                        data[i] = data[i+1] = data[i+2] = n;
                     }
                 }
-                ctx.putImageData(imageData, 0, 0);
+                ctx.putImageData(imgData, 0, 0);
 
-                // 掃描線
-                ctx.fillStyle = "rgba(0, 255, 65, 0.03)";
-                for(let i=0; i<canvas.height; i+=2) ctx.fillRect(0, i, canvas.width, 1);
-
-                // 隨機位移故障
-                if (Math.random() > 0.9) {
+                if (Math.random() > 0.95) {
                     const y = Math.random() * canvas.height;
-                    const h = Math.random() * 30;
-                    const x = (Math.random() - 0.5) * 50 * (1 - syncRate);
+                    const h = 5 + Math.random() * 15;
+                    const x = (Math.random() - 0.5) * 30 * (1 - sync);
                     ctx.drawImage(canvas, 0, y, canvas.width, h, x, y, canvas.width, h);
                 }
 
-                syncText.innerText = `SYNC: ${Math.floor(syncRate * 100)}%`;
-                mainTitle.innerText = "Encrypted Signal detected";
-                mainTitle.className = "";
+                syncVal.innerText = `SYNC: ${Math.floor(sync * 100)}%`;
             }
-
             requestAnimationFrame(draw);
         }
 
